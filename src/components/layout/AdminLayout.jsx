@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import back1 from "../../assets/back1.png";
 
 const AdminLayout = () => {
   const { admin, handleLogout } = useAuth();
@@ -15,7 +16,7 @@ const AdminLayout = () => {
 
   return (
     <div className="page-wrap">
-      <img className="edge-confetti" src="../assets/back1.png" alt="" />
+      <img className="edge-confetti" src={back1} alt="" />
 
       <div className="admin-shell">
         <aside className="admin-sidebar">

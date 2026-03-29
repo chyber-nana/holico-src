@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import back1 from "../assets/back1.png";
 
 const LoginPage = () => {
   const { handleLogin } = useAuth();
@@ -30,11 +31,7 @@ const LoginPage = () => {
 
   return (
     <div className="page-wrap">
-      <img
-        className="edge-confetti"
-        src="../assets/back1.png"
-        alt=""
-      />
+      <img className="edge-confetti" src={back1} alt="" />
 
       <div className="auth-page">
         <div className="auth-card">

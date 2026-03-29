@@ -83,16 +83,6 @@ const DashboardPage = () => {
                 <div className="loading-leader-card" />
               </div>
             </div>
-
-            <div className="admin-panel">
-              <h2 className="panel-title">Leader Table</h2>
-              <div className="loading-table">
-                <div className="loading-table-row" />
-                <div className="loading-table-row" />
-                <div className="loading-table-row" />
-                <div className="loading-table-row" />
-              </div>
-            </div>
           </>
         ) : (
           <>
@@ -132,30 +122,6 @@ const DashboardPage = () => {
                     </p>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div className="admin-panel">
-              <h2 className="panel-title">Leader Table</h2>
-              <div className="table-scroll">
-                <table className="results-table">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Leader</th>
-                      <th>Votes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leaders.map((item, index) => (
-                      <tr key={`${item.category}-${index}`}>
-                        <td>{item.category}</td>
-                        <td>{item.leader?.name || "No leader yet"}</td>
-                        <td>{item.leader?.voteCount || 0}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
             </div>
           </>

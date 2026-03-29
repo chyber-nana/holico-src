@@ -15,7 +15,7 @@ const AdminLayout = () => {
 
   return (
     <div className="page-wrap">
-      <img className="edge-confetti" src="./src/assets/back1.png" alt="" />
+      <img className="edge-confetti" src="../assets/back1.png" alt="" />
 
       <div className="admin-shell">
         <aside className="admin-sidebar">

@@ -32,7 +32,7 @@ const LoginPage = () => {
     <div className="page-wrap">
       <img
         className="edge-confetti"
-        src="./src/assets/back1.png"
+        src="../assets/back1.png"
         alt=""
       />
 

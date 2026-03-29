@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "../api/categoryApi";
-import {
-  createPendingVotePayment,
-  getVotePaymentStatus,
-} from "../api/voteApi";
+import { createPendingVotePayment, getVotePaymentStatus } from "../api/voteApi";
 
 const PRICE_PER_VOTE = 1;
 
@@ -11,13 +8,13 @@ const VotingPage = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [popup, setPopup] = useState({
-  show: false,
-  text: "",
-  type: "info", // success | error | info
-});
+    show: false,
+    text: "",
+    type: "info", // success | error | info
+  });
   const [voteCounts, setVoteCounts] = useState({});
   const [payerForm, setPayerForm] = useState({ payerName: "", payerPhone: "" });
-
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [flowOpen, setFlowOpen] = useState(false);
   const [flowStep, setFlowStep] = useState(1);
   const [pendingNominee, setPendingNominee] = useState(null);
@@ -33,32 +30,46 @@ const VotingPage = () => {
   }, []);
 
   useEffect(() => {
-  if (popup.show) {
-    const timer = setTimeout(() => {
-      setPopup((prev) => ({ ...prev, show: false }));
-    }, 2000);
+    if (popup.show) {
+      const timer = setTimeout(() => {
+        setPopup((prev) => ({ ...prev, show: false }));
+      }, 2000);
 
-    return () => clearTimeout(timer);
-  }
-}, [popup.show]);
+      return () => clearTimeout(timer);
+    }
+  }, [popup.show]);
 
   const loadCategories = async () => {
     try {
+      setLoadingCategories(true);
       const data = await getCategories();
       setCategories(data);
     } catch {
-      setPopup({ show: true, text: "Failed to load categories.", type: "error" });
+      setPopup({
+        show: true,
+        text: "Failed to load categories.",
+        type: "error",
+      });
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
   const categoriesWithLeaders = useMemo(() => {
     return categories.map((category, index) => {
       const nominees = category.nominees || [];
-      const sorted = [...nominees].sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+      const sorted = [...nominees].sort(
+        (a, b) => (b.voteCount || 0) - (a.voteCount || 0),
+      );
       const leader = sorted[0] || null;
-      const totalVotes = nominees.reduce((sum, nominee) => sum + (nominee.voteCount || 0), 0);
+      const totalVotes = nominees.reduce(
+        (sum, nominee) => sum + (nominee.voteCount || 0),
+        0,
+      );
       const leaderPercent =
-        leader && totalVotes > 0 ? Math.round(((leader.voteCount || 0) / totalVotes) * 100) : 0;
+        leader && totalVotes > 0
+          ? Math.round(((leader.voteCount || 0) / totalVotes) * 100)
+          : 0;
 
       return {
         ...category,
@@ -74,11 +85,14 @@ const VotingPage = () => {
 
     setVoteCounts((prev) => ({
       ...prev,
-      [nomineeId]: Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(parsed, 100),
+      [nomineeId]:
+        Number.isNaN(parsed) || parsed < 1 ? 1 : Math.min(parsed, 100),
     }));
   };
 
-  const selectedVoteCount = pendingNominee ? voteCounts[pendingNominee.id] || 1 : 1;
+  const selectedVoteCount = pendingNominee
+    ? voteCounts[pendingNominee.id] || 1
+    : 1;
   const selectedAmount = selectedVoteCount * PRICE_PER_VOTE;
 
   const openVoteFlow = (nominee) => {
@@ -114,10 +128,10 @@ const VotingPage = () => {
       setFlowStep(2);
     } catch (error) {
       setPopup({
-  show: true,
-  text: error?.response?.data?.message || "Failed to start payment flow.",
-  type: "error",
-});
+        show: true,
+        text: error?.response?.data?.message || "Failed to start payment flow.",
+        type: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -145,30 +159,35 @@ const VotingPage = () => {
       const res = await getVotePaymentStatus(trackingCode.trim());
       setTrackingResult(res);
     } catch (error) {
-      setTrackingMessage(error?.response?.data?.message || "Unable to check code.");
+      setTrackingMessage(
+        error?.response?.data?.message || "Unable to check code.",
+      );
     }
   };
 
   return (
     <div className="page-wrap vote-page-wrap">
       {popup.show && (
-  <div className="popup-overlay" onClick={() => setPopup({ ...popup, show: false })}>
-    <div
-      className={`popup-card popup-${popup.type}`}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="popup-content">
-        <p>{popup.text}</p>
-        <button
-          className="popup-close-btn"
+        <div
+          className="popup-overlay"
           onClick={() => setPopup({ ...popup, show: false })}
         >
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div
+            className={`popup-card popup-${popup.type}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="popup-content">
+              <p>{popup.text}</p>
+              <button
+                className="popup-close-btn"
+                onClick={() => setPopup({ ...popup, show: false })}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="vote-page">
         <div className="vote-container">
@@ -179,40 +198,58 @@ const VotingPage = () => {
             </p>
 
             <div className="category-grid">
-              {categoriesWithLeaders.map((category) => (
-                <button
-                  key={category.id}
-                  className="category-tile"
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  <div className="category-row">
-                    <div className="category-number">{category.number}.</div>
-                    <div className="category-name">{category.name}</div>
-                  </div>
+              {loadingCategories ? (
+                <div className="category-loading-wrap">
+                  <div className="category-loading-card" />
+                  <div className="category-loading-card" />
+                  <div className="category-loading-card" />
+                </div>
+              ) : (
+                <div className="category-grid">
+                  {categoriesWithLeaders.map((category) => (
+                    <button
+                      key={category.id}
+                      className="category-tile"
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      <div className="category-row">
+                        <div className="category-number">
+                          {category.number}.
+                        </div>
+                        <div className="category-name">{category.name}</div>
+                      </div>
 
-                  <div className="category-progress-wrap">
-                    <div className="category-meta">
-                      <span>
-                        Leader: {category.leader ? category.leader.name : "No votes yet"}
-                      </span>
-                      <span>{category.leaderPercent}%</span>
-                    </div>
+                      <div className="category-progress-wrap">
+                        <div className="category-meta">
+                          <span>
+                            Leader:{" "}
+                            {category.leader
+                              ? category.leader.name
+                              : "No votes yet"}
+                          </span>
+                          <span>{category.leaderPercent}%</span>
+                        </div>
 
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{ width: `${category.leaderPercent}%` }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              ))}
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${category.leaderPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="section-card tracking-card">
             <h2 className="panel-title">Check Vote Approval Status</h2>
-            <p className="muted">Enter your tracking code to see whether your vote has been approved.</p>
+            <p className="muted">
+              Enter your tracking code to see whether your vote has been
+              approved.
+            </p>
 
             <div className="tracking-row">
               <input
@@ -229,13 +266,25 @@ const VotingPage = () => {
 
             {trackingResult && (
               <div className={`status-card status-${trackingResult.status}`}>
-                <div><strong>Status:</strong> {trackingResult.status}</div>
-                <div><strong>Nominee:</strong> {trackingResult.nominee?.name}</div>
-                <div><strong>Category:</strong> {trackingResult.category?.name}</div>
-                <div><strong>Votes:</strong> {trackingResult.voteCount}</div>
-                <div><strong>Amount:</strong> GHS {trackingResult.amount}</div>
+                <div>
+                  <strong>Status:</strong> {trackingResult.status}
+                </div>
+                <div>
+                  <strong>Nominee:</strong> {trackingResult.nominee?.name}
+                </div>
+                <div>
+                  <strong>Category:</strong> {trackingResult.category?.name}
+                </div>
+                <div>
+                  <strong>Votes:</strong> {trackingResult.voteCount}
+                </div>
+                <div>
+                  <strong>Amount:</strong> GHS {trackingResult.amount}
+                </div>
                 {trackingResult.rejectionReason && (
-                  <div><strong>Reason:</strong> {trackingResult.rejectionReason}</div>
+                  <div>
+                    <strong>Reason:</strong> {trackingResult.rejectionReason}
+                  </div>
                 )}
               </div>
             )}
@@ -244,7 +293,10 @@ const VotingPage = () => {
       </div>
 
       {selectedCategory && (
-        <div className="modal-overlay" onClick={() => setSelectedCategory(null)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setSelectedCategory(null)}
+        >
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div>
@@ -252,17 +304,26 @@ const VotingPage = () => {
                 <p className="muted">Select a nominee and vote.</p>
               </div>
 
-              <button className="modal-close" onClick={() => setSelectedCategory(null)}>
+              <button
+                className="modal-close"
+                onClick={() => setSelectedCategory(null)}
+              >
                 Close
               </button>
             </div>
 
             <div className="nominee-grid">
               {(selectedCategory.nominees || []).map((nominee) => (
-                <div className="nominee-card nominee-card-polished" key={nominee.id}>
+                <div
+                  className="nominee-card nominee-card-polished"
+                  key={nominee.id}
+                >
                   <img
                     className="nominee-image"
-                    src={nominee.image || "https://via.placeholder.com/300x200?text=Nominee"}
+                    src={
+                      nominee.image ||
+                      "https://via.placeholder.com/300x200?text=Nominee"
+                    }
                     alt={nominee.name}
                   />
 
@@ -277,13 +338,17 @@ const VotingPage = () => {
                       max="100000"
                       className="vote-count-input"
                       value={voteCounts[nominee.id] || 1}
-                      onChange={(e) => handleVoteCountChange(nominee.id, e.target.value)}
+                      onChange={(e) =>
+                        handleVoteCountChange(nominee.id, e.target.value)
+                      }
                     />
                   </div>
 
                   <div className="nominee-footer">
-                    
-                    <button className="vote-btn" onClick={() => openVoteFlow(nominee)}>
+                    <button
+                      className="vote-btn"
+                      onClick={() => openVoteFlow(nominee)}
+                    >
                       VOTE
                     </button>
                   </div>
@@ -296,41 +361,76 @@ const VotingPage = () => {
 
       {flowOpen && pendingNominee && (
         <div className="modal-overlay" onClick={closeVoteFlow}>
-          <div className="payment-modal-card" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="payment-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             {flowStep === 1 && (
               <>
                 <div className="modal-header">
                   <div>
                     <h2>Payment Summary</h2>
-                    <p className="muted">Review your votes before continuing.</p>
+                    <p className="muted">
+                      Review your votes before continuing.
+                    </p>
                   </div>
-                  <button className="modal-close" onClick={closeVoteFlow}>Close</button>
+                  <button className="modal-close" onClick={closeVoteFlow}>
+                    Close
+                  </button>
                 </div>
 
                 <div className="payment-summary">
-                  <div className="payment-row"><span>Nominee</span><strong>{pendingNominee.name}</strong></div>
-                  <div className="payment-row"><span>Votes</span><strong>{selectedVoteCount}</strong></div>
-                  <div className="payment-row"><span>Price per vote</span><strong>GHS {PRICE_PER_VOTE}</strong></div>
-                  <div className="payment-row payment-total"><span>Total</span><strong>GHS {selectedAmount}</strong></div>
+                  <div className="payment-row">
+                    <span>Nominee</span>
+                    <strong>{pendingNominee.name}</strong>
+                  </div>
+                  <div className="payment-row">
+                    <span>Votes</span>
+                    <strong>{selectedVoteCount}</strong>
+                  </div>
+                  <div className="payment-row">
+                    <span>Price per vote</span>
+                    <strong>GHS {PRICE_PER_VOTE}</strong>
+                  </div>
+                  <div className="payment-row payment-total">
+                    <span>Total</span>
+                    <strong>GHS {selectedAmount}</strong>
+                  </div>
                 </div>
 
                 <label>Your Name (optional)</label>
                 <input
                   value={payerForm.payerName}
-                  onChange={(e) => setPayerForm((prev) => ({ ...prev, payerName: e.target.value }))}
+                  onChange={(e) =>
+                    setPayerForm((prev) => ({
+                      ...prev,
+                      payerName: e.target.value,
+                    }))
+                  }
                   placeholder="Enter your name"
                 />
 
                 <label>Your Phone Number (optional)</label>
                 <input
                   value={payerForm.payerPhone}
-                  onChange={(e) => setPayerForm((prev) => ({ ...prev, payerPhone: e.target.value }))}
+                  onChange={(e) =>
+                    setPayerForm((prev) => ({
+                      ...prev,
+                      payerPhone: e.target.value,
+                    }))
+                  }
                   placeholder="Enter your phone number"
                 />
 
                 <div className="payment-actions">
-                  <button className="subtle-btn" onClick={closeVoteFlow}>Cancel</button>
-                  <button className="secondary-small" onClick={goToInstructions} disabled={submitting}>
+                  <button className="subtle-btn" onClick={closeVoteFlow}>
+                    Cancel
+                  </button>
+                  <button
+                    className="secondary-small"
+                    onClick={goToInstructions}
+                    disabled={submitting}
+                  >
                     {submitting ? "Loading..." : "Next"}
                   </button>
                 </div>
@@ -342,21 +442,37 @@ const VotingPage = () => {
                 <div className="modal-header">
                   <div>
                     <h2>Make Payment</h2>
-                    <p className="muted">Send the exact amount using the details below.</p>
+                    <p className="muted">
+                      Send the exact amount using the details below.
+                    </p>
                   </div>
                 </div>
 
                 <div className="payment-summary">
-                  <div className="payment-row"><span>Amount</span><strong>GHS {pendingRequest.payment.amount}</strong></div>
-                  <div className="payment-row"><span>MoMo Number</span><strong>{pendingRequest.paymentMeta.momoNumber}</strong></div>
-                  <div className="payment-row"><span>Name</span><strong>{pendingRequest.paymentMeta.momoName}</strong></div>
-                  <div className="payment-row payment-total"><span>Reference</span><strong>{pendingRequest.payment.reference}</strong></div>
+                  <div className="payment-row">
+                    <span>Amount</span>
+                    <strong>GHS {pendingRequest.payment.amount}</strong>
+                  </div>
+                  <div className="payment-row">
+                    <span>MoMo Number</span>
+                    <strong>{pendingRequest.paymentMeta.momoNumber}</strong>
+                  </div>
+                  <div className="payment-row">
+                    <span>Name</span>
+                    <strong>{pendingRequest.paymentMeta.momoName}</strong>
+                  </div>
+                  <div className="payment-row payment-total">
+                    <span>Reference</span>
+                    <strong>{pendingRequest.payment.reference}</strong>
+                  </div>
                 </div>
 
                 <div className="copy-actions">
                   <button
                     className="primary-small"
-                    onClick={() => copyText(pendingRequest.paymentMeta.momoNumber)}
+                    onClick={() =>
+                      copyText(pendingRequest.paymentMeta.momoNumber)
+                    }
                   >
                     Copy Number
                   </button>
@@ -369,12 +485,18 @@ const VotingPage = () => {
                 </div>
 
                 <p className="payment-tip">
-                  After sending the money, click below so your vote can be submitted for verification.
+                  After sending the money, click below so your vote can be
+                  submitted for verification.
                 </p>
 
                 <div className="payment-actions">
-                  <button className="subtle-btn" onClick={() => setFlowStep(1)}>Back</button>
-                  <button className="secondary-small" onClick={markAsSubmittedForVerification}>
+                  <button className="subtle-btn" onClick={() => setFlowStep(1)}>
+                    Back
+                  </button>
+                  <button
+                    className="secondary-small"
+                    onClick={markAsSubmittedForVerification}
+                  >
                     I Have Paid
                   </button>
                 </div>
@@ -385,16 +507,31 @@ const VotingPage = () => {
               <div className="payment-success-state">
                 <div className="success-check-wrap">
                   <div className="success-check-circle">
-                    <svg className="success-check" viewBox="0 0 52 52" aria-hidden="true">
-                      <circle className="success-check-bg" cx="26" cy="26" r="25" />
-                      <path className="success-check-mark" d="M14 27.5l8 8 16-17" />
+                    <svg
+                      className="success-check"
+                      viewBox="0 0 52 52"
+                      aria-hidden="true"
+                    >
+                      <circle
+                        className="success-check-bg"
+                        cx="26"
+                        cy="26"
+                        r="25"
+                      />
+                      <path
+                        className="success-check-mark"
+                        d="M14 27.5l8 8 16-17"
+                      />
                     </svg>
                   </div>
                 </div>
 
-                <h2 className="payment-success-title">Submitted for Verification</h2>
+                <h2 className="payment-success-title">
+                  Submitted for Verification
+                </h2>
                 <p className="muted payment-success-text">
-                  Your vote request has been submitted. It will be approved after payment is confirmed.
+                  Your vote request has been submitted. It will be approved
+                  after payment is confirmed.
                 </p>
 
                 <div className="payment-summary compact-summary">
@@ -421,7 +558,10 @@ const VotingPage = () => {
                   </button>
                 </div>
 
-                <button className="secondary-small success-done-btn" onClick={closeVoteFlow}>
+                <button
+                  className="secondary-small success-done-btn"
+                  onClick={closeVoteFlow}
+                >
                   Done
                 </button>
               </div>

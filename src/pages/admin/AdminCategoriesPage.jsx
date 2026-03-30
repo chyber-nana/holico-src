@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { createCategory, getCategories, updateCategory } from "../../api/categoryApi";
+import {
+  createCategory,
+  deleteCategory,
+  getCategories,
+  updateCategory,
+} from "../../api/categoryApi";
 
 const initialForm = {
   name: "",
@@ -66,6 +71,28 @@ export default function AdminCategoriesPage() {
       description: cat.description || "",
     });
     setMessage("");
+  };
+
+  const onDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Delete this category? This may fail if nominees are still attached to it."
+    );
+    if (!confirmed) return;
+
+    try {
+      setMessage("");
+      await deleteCategory(id);
+
+      if (editingId === id) {
+        resetForm();
+      }
+
+      setMessage("Category deleted successfully");
+      fetchCategories();
+    } catch (err) {
+      console.error(err);
+      setMessage(err?.response?.data?.message || "Failed to delete category");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -142,7 +169,13 @@ export default function AdminCategoriesPage() {
 
             <div className="row-actions">
               <button className="primary-small" type="submit" disabled={loading}>
-                {loading ? (editingId ? "Updating..." : "Adding...") : editingId ? "Update Category" : "Add Category"}
+                {loading
+                  ? editingId
+                    ? "Updating..."
+                    : "Adding..."
+                  : editingId
+                  ? "Update Category"
+                  : "Add Category"}
               </button>
 
               {editingId && (
@@ -181,9 +214,22 @@ export default function AdminCategoriesPage() {
                       <td>{cat.slug}</td>
                       <td>{cat.description || "-"}</td>
                       <td>
-                        <button className="primary-small" onClick={() => onEdit(cat)}>
-                          Edit
-                        </button>
+                        <div className="inline-actions">
+                          <button
+                            type="button"
+                            className="primary-small"
+                            onClick={() => onEdit(cat)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="danger-btn"
+                            onClick={() => onDelete(cat.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

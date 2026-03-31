@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCategories } from "../api/categoryApi";
 import { createPendingVotePayment, getVotePaymentStatus } from "../api/voteApi";
+import defaultNominee from "../assets/human-icon_970584-3.avif";
 
 const PRICE_PER_VOTE = 1;
 
@@ -320,10 +321,7 @@ const VotingPage = () => {
                 >
                   <img
                     className="nominee-image"
-                    src={
-                      nominee.image ||
-                      "https://via.placeholder.com/300x200?text=Nominee"
-                    }
+                    src={nominee.image || defaultNominee}
                     alt={nominee.name}
                   />
 

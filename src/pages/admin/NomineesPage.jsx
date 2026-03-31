@@ -76,11 +76,6 @@ const NomineesPage = () => {
         await updateNominee(editingId, payload);
         setMessage("Nominee updated.");
       } else {
-        if (!imageFile) {
-          setMessage("Please upload an image.");
-          return;
-        }
-
         await createNominee(payload);
         setMessage("Nominee created.");
       }

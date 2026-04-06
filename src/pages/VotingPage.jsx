@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getCategories } from "../api/categoryApi";
 import { createPendingVotePayment, getVotePaymentStatus } from "../api/voteApi";
 import defaultNominee from "../assets/human-icon_970584-3.avif";
@@ -21,6 +22,8 @@ const VotingPage = () => {
   const [pendingNominee, setPendingNominee] = useState(null);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [highlightedNomineeId, setHighlightedNomineeId] = useState(null);
 
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingResult, setTrackingResult] = useState(null);
@@ -45,6 +48,59 @@ const VotingPage = () => {
       setLoadingCategories(true);
       const data = await getCategories();
       setCategories(data);
+
+      const nomineeParam = searchParams.get("nominee");
+      const categoryParam = searchParams.get("category");
+
+      if (nomineeParam) {
+        const nomineeId = Number(nomineeParam);
+        const categoryId = Number(categoryParam);
+
+        let foundCategory = null;
+        let foundNominee = null;
+
+        for (const category of data) {
+          if (categoryId && category.id !== categoryId) continue;
+
+          const nominee = (category.nominees || []).find(
+            (item) => item.id === nomineeId,
+          );
+
+          if (nominee) {
+            foundCategory = category;
+            foundNominee = nominee;
+            break;
+          }
+        }
+
+        if (!foundCategory) {
+          for (const category of data) {
+            const nominee = (category.nominees || []).find(
+              (item) => item.id === nomineeId,
+            );
+
+            if (nominee) {
+              foundCategory = category;
+              foundNominee = nominee;
+              break;
+            }
+          }
+        }
+
+        if (foundCategory && foundNominee) {
+          setSelectedCategory(foundCategory);
+          setHighlightedNomineeId(foundNominee.id);
+
+          setTimeout(() => {
+            const el = document.getElementById(
+              `nominee-card-${foundNominee.id}`,
+            );
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }, 250);
+        }
+      }
     } catch {
       setPopup({
         show: true,
@@ -316,7 +372,12 @@ const VotingPage = () => {
             <div className="nominee-grid">
               {(selectedCategory.nominees || []).map((nominee) => (
                 <div
-                  className="nominee-card nominee-card-polished"
+                  id={`nominee-card-${nominee.id}`}
+                  className={`nominee-card nominee-card-polished ${
+                    highlightedNomineeId === nominee.id
+                      ? "nominee-card-highlighted"
+                      : ""
+                  }`}
                   key={nominee.id}
                 >
                   <img
@@ -343,6 +404,29 @@ const VotingPage = () => {
                   </div>
 
                   <div className="nominee-footer">
+                    <button
+                      type="button"
+                      className="subtle-btn"
+                      onClick={async () => {
+                        const link = `${window.location.origin}/vote?nominee=${nominee.id}&category=${selectedCategory.id}`;
+                        try {
+                          await navigator.clipboard.writeText(link);
+                          setPopup({
+                            show: true,
+                            text: "Nominee link copied.",
+                            type: "success",
+                          });
+                        } catch {
+                          setPopup({
+                            show: true,
+                            text: "Could not copy link.",
+                            type: "error",
+                          });
+                        }
+                      }}
+                    >
+                      Share
+                    </button>
                     <button
                       className="vote-btn"
                       onClick={() => openVoteFlow(nominee)}

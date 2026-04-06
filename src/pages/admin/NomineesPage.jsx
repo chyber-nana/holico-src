@@ -46,6 +46,11 @@ const NomineesPage = () => {
     }));
   };
 
+  const buildNomineeShareLink = (nominee) => {
+  const base = window.location.origin;
+  return `${base}/vote?nominee=${nominee.id}&category=${nominee.categoryId}`;
+};
+
   const onFileChange = (e) => {
     setImageFile(e.target.files?.[0] || null);
   };
@@ -217,14 +222,29 @@ const NomineesPage = () => {
                     <td>{nominee.category?.name}</td>
                     <td>{nominee.voteCount}</td>
                     <td>
-                      <div className="inline-actions">
-                        <button className="primary-small" onClick={() => onEdit(nominee)}>
-                          Edit
-                        </button>
-                        <button className="danger-btn" onClick={() => onDelete(nominee.id)}>
-                          Delete
-                        </button>
-                      </div>
+<div className="inline-actions">
+  <button className="primary-small" onClick={() => onEdit(nominee)}>
+    Edit
+  </button>
+  <button
+    type="button"
+    className="secondary-small"
+    onClick={async () => {
+      const link = buildNomineeShareLink(nominee);
+      try {
+        await navigator.clipboard.writeText(link);
+        setMessage("Share link copied.");
+      } catch {
+        setMessage("Could not copy share link.");
+      }
+    }}
+  >
+    Copy Link
+  </button>
+  <button className="danger-btn" onClick={() => onDelete(nominee.id)}>
+    Delete
+  </button>
+</div>
                     </td>
                   </tr>
                 ))}

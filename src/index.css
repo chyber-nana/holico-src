@@ -1052,6 +1052,14 @@ select:focus {
   gap: 10px;
 }
 
+.nominee-card-highlighted {
+  border: 2px solid var(--gold);
+  box-shadow:
+    0 0 0 3px rgba(244, 196, 51, 0.18),
+    0 14px 28px rgba(0, 0, 0, 0.22);
+  transform: scale(1.01);
+}
+
 .loading-table-row {
   height: 44px;
   border-radius: 12px;

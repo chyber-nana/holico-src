@@ -3,6 +3,27 @@ import { useSearchParams } from "react-router-dom";
 import { getCategories } from "../api/categoryApi";
 import { createPendingVotePayment, getVotePaymentStatus } from "../api/voteApi";
 import defaultNominee from "../assets/human-icon_970584-3.avif";
+import { getPortalStatus } from "../api/portalApi";
+
+const getCountdownParts = (targetDate) => {
+  if (!targetDate) return null;
+
+  const now = new Date().getTime();
+  const end = new Date(targetDate).getTime();
+  const diff = end - now;
+
+  if (diff <= 0) {
+    return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+
+  return {
+    total: diff,
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / (1000 * 60)) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+  };
+};
 
 const PRICE_PER_VOTE = 1;
 
@@ -28,6 +49,35 @@ const VotingPage = () => {
   const [trackingCode, setTrackingCode] = useState("");
   const [trackingResult, setTrackingResult] = useState(null);
   const [trackingMessage, setTrackingMessage] = useState("");
+   const navigate = useNavigate();
+  const [portalStatus, setPortalStatus] = useState(null);
+  const [countdown, setCountdown] = useState(null);
+
+  useEffect(() => {
+    const loadStatus = async () => {
+      try {
+        const data = await getPortalStatus();
+        setPortalStatus(data);
+        setCountdown(getCountdownParts(data.votingEndsAt));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadStatus();
+  }, []);
+
+  useEffect(() => {
+    if (!portalStatus?.votingEndsAt) return;
+
+    const timer = setInterval(() => {
+      setCountdown(getCountdownParts(portalStatus.votingEndsAt));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [portalStatus]);
+
+  const portalClosed = portalStatus?.portalClosed;
 
   useEffect(() => {
     loadCategories();
@@ -245,6 +295,20 @@ const VotingPage = () => {
           </div>
         </div>
       )}
+      if (portalStatus?.portalClosed) {
+    <div className="page-wrap vote-page-wrap">
+      <div className="vote-page">
+        <div className="vote-container">
+          <div className="section-card portal-ended-card">
+            <h1 className="section-title">Voting Has Ended</h1>
+            <p className="section-subtitle">
+              This voting portal is now closed.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+}
 
       <div className="vote-page">
         <div className="vote-container">

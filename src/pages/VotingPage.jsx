@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getCategories } from "../api/categoryApi";
 import { createPendingVotePayment, getVotePaymentStatus } from "../api/voteApi";
 import defaultNominee from "../assets/human-icon_970584-3.avif";
@@ -272,6 +272,22 @@ const VotingPage = () => {
     }
   };
 
+  if (portalStatus?.portalClosed) {
+  return (
+    <div className="page-wrap vote-page-wrap">
+      <div className="vote-page">
+        <div className="vote-container">
+          <div className="section-card portal-ended-card">
+            <h1 className="section-title">Voting Has Ended</h1>
+            <p className="section-subtitle">
+              This voting portal is now closed.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
   return (
     <div className="page-wrap vote-page-wrap">
       {popup.show && (
@@ -295,20 +311,6 @@ const VotingPage = () => {
           </div>
         </div>
       )}
-      if (portalStatus?.portalClosed) {
-    <div className="page-wrap vote-page-wrap">
-      <div className="vote-page">
-        <div className="vote-container">
-          <div className="section-card portal-ended-card">
-            <h1 className="section-title">Voting Has Ended</h1>
-            <p className="section-subtitle">
-              This voting portal is now closed.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-}
 
       <div className="vote-page">
         <div className="vote-container">
